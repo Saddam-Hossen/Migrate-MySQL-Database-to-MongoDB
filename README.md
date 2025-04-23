@@ -60,3 +60,98 @@ If you're using Excel and want better control, consider:
     year
   FROM sonbidanvote23.employee_inserted_data;
 ```
+
+#### ✅ Java Code:
+
+```sql
+
+       readCSVForAttendanceData("C:\\Users\\01957\\Downloads/attendanceData1.csv");
+
+       public  void readCSVForAttendanceData(String filePath) {
+        String line;
+              String regex = "\"([^\"]*)\"|([^,]+)"; // Regex to capture quoted and unquoted values
+              Pattern pattern = Pattern.compile(regex);
+      
+              try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+                  br.readLine();
+                  while ((line = br.readLine()) != null) {
+                      List<String> values = new ArrayList<>();
+                      Matcher matcher = pattern.matcher(line);
+      
+                      while (matcher.find()) {
+                          if (matcher.group(1) != null) {
+                              values.add(matcher.group(1)); // Quoted value
+                          } else {
+                              values.add(matcher.group(2)); // Unquoted value
+                          }
+                      }
+      
+                     // System.out.println(values.size()+"  "+values); // Print as a list
+                      AttendanceData ee=new AttendanceData();
+                      ee.setEarlyExitReason(values.get(0));
+                      ee.setEmployeeId(values.get(1));
+                      ee.setEntryDate(convertDate(values.get(2))  );// date 3
+                      // ee.setEntryTime(parseDateTime(values.get(3),values.get(4)));
+                      ee.setEntryTime( convertUtcToDhaka(parseDateTime(values.get(3))));
+                     // ee.setExitTime(parseDateTime(values.get(3),values.get(5)));
+                      ee.setExitTime(convertUtcToDhaka(parseDateTime(values.get(4))));
+                      ee.setGlobalDayStatus(values.get(5));
+                      ee.setLateEntryReason(values.get(6));
+                      ee.setMonth(values.get(7));
+                      ee.setName(values.get(8));
+                      ee.setOuttime(values.get(9));
+                     // ee.setPresentTime(parseDateTime(values.get(3),values.get(11)));
+                      ee.setPresentTime( convertUtcToDhaka(parseDateTime(values.get(10))));
+                      ee.setStatus(values.get(11));
+                      ee.setUpdateStatus(values.get(12));
+                      ee.setYear(values.get(13));
+                      attendanceDataRepository.save(ee);
+                      System.out.println(ee.toString());
+                      System.out.println();
+                  }
+              } catch (IOException e) {
+                  e.printStackTrace();
+              }
+          }
+
+          public static LocalDateTime convertUtcToDhaka(LocalDateTime utcDateTime) {
+            // Attach UTC zone to the LocalDateTime
+            ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+    
+            // Convert to Asia/Dhaka zone
+            ZonedDateTime dhakaZoned = utcZoned.withZoneSameInstant(ZoneId.of("Asia/Dhaka"));
+    
+            // Return as LocalDateTime in Asia/Dhaka
+            return dhakaZoned.toLocalDateTime();
+         }
+
+         public static String convertUtcToDhaka(String inputTime) {
+         DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+         LocalDateTime utcDateTime = LocalDateTime.parse(inputTime, inputFormatter);
+
+        ZonedDateTime utcZoned = utcDateTime.atZone(ZoneId.of("UTC"));
+        ZonedDateTime dhakaZoned = utcZoned.withZoneSameInstant(ZoneId.of("Asia/Dhaka"));
+
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return dhakaZoned.format(outputFormatter);
+       }
+
+       public static LocalDateTime parseDateTime(String dateTimeStr) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy H:mm", Locale.ENGLISH);
+        return LocalDateTime.parse(dateTimeStr, formatter);
+      }
+      public static String convertDate(String inputDate) {
+        // Define the input formatter
+        DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+        DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        // Parse the input date
+        LocalDate date = LocalDate.parse(inputDate, inputFormatter);
+
+        // Convert it to the fixed date (February 5 of the same year)
+        LocalDate transformedDate = LocalDate.of(date.getYear(), date.getMonthValue(), date.getDayOfMonth());
+
+        // Format and return as String
+        return transformedDate.format(outputFormatter);
+    }
+```
